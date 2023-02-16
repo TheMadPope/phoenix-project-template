@@ -1,0 +1,87 @@
+#!/bin/bash
+####################################################################################################
+#
+# FILENAME:     rebuild-scratch-org
+#
+# PURPOSE:      Deletes then recreates a scratch org without any customizations - standard Salesforce only.
+#
+# DESCRIPTION:  Executing this script will first delete the exisisting default scratch org for
+#               this project (if it exists), then create a new one using the source and config
+#               information defined in your dev-tools/lib/local-config.sh file.
+#
+# INSTRUCTIONS: Execute the following command from the root of your SFDX project directory.
+#               ./dev-tools/rebuild-generic-scratch-org
+#
+####################################################################################################
+#
+##
+###
+#### LOAD SHARED FUNCTIONS LIBRARY #################################################################
+###
+##
+#
+# Make sure that the shared-functions.sh script exists.
+if [ ! -r `dirname $0`/lib/shared-functions.sh ]; then
+  echo "\nFATAL ERROR: `tput sgr0``tput setaf 1`Could not load dev-tools/lib/shared-functions.sh.  File not found.\n"
+  exit 1
+fi
+
+# Indicate the operation being carried out by this script.
+REQUESTED_OPERATION="REBUILD_GENERIC_SCRATCH_ORG"
+
+# Load the shared-functions.sh library.  This action will also cause the
+# config variables from dev-tools/lib/local-config.sh to be loaded.
+source `dirname $0`/lib/shared-functions.sh
+#
+##
+###
+#### CONFIRM SCRIPT EXECUTION ######################################################################
+###
+##
+#
+confirmWithAbort "Do you want to rebuild a GENERIC (no custom code, just default Salesforce instance) scratch org?"
+#
+##
+###
+#### CREATE LOCAL VARIABLES ########################################################################
+###
+##
+#
+# The default version of this script does not require additional local
+# variables.  If your customized script does require them, this is where
+# you would define and initialize them.
+
+#
+##
+###
+#### SCRATCH ORG SETUP (DELETE/CREATE/PUSH) ########################################################
+###
+##
+#
+# STEP 0
+# Reset the Step Message counter to reflect the number of TOTAL STEPS
+# in your rebuild process. For the baseline SFDX-Falcon template it's 4.
+resetStepMsgCounter 3
+
+# STEPS 1 and 2
+# Delete the current scratch org.
+deleteScratchOrg "generic-scratch"
+
+# STEP 3
+# Create a new scratch org using the scratch-def.json locally configured for this project.
+createScratchOrg "generic-scratch"
+
+
+#
+##
+###
+#### ECHO CLOSING MESSAGE ##########################################################################
+###
+##
+#
+echoScriptCompleteMsg \
+"Rebuild of scratch org completed successfully; Alias: generic-scratch"
+
+exit 0
+
+##END##
