@@ -5,7 +5,7 @@
       "default": true
     }
   ],
-  "name": "Transformation Group Project Tracker",
+  "name": "SFDX Phoenix Project Template",
   "namespace": "",
   "sfdcLoginUrl": "https://login.salesforce.com",
   "sourceApiVersion": "55.0"
