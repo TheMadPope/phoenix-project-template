@@ -116,29 +116,28 @@ confirmWithAbort () {
 ##
 #
 createScratchOrg() {
-  # Declare a local variable to store the Alias of the org to CREATE
-  local ORG_ALIAS_TO_CREATE=""
-
-  # Check if a value was passed to this function in Argument 1.
-  # If there was we will make that the org alias to CREATE.
-  if [ ! -z $1 ]; then
-    ORG_ALIAS_TO_CREATE="$1"
-  elif [ ! -z $TARGET_ORG_ALIAS ]; then
-    ORG_ALIAS_TO_CREATE="$TARGET_ORG_ALIAS"
+  # Set default scratch config or use the one passed in
+  local SCRATCH_CONFIG=$1
+  if [ -z "$1" ]; then
+    SCRATCH_CONFIG="$SCRATCH_ORG_CONFIG"
   else
-    # Something went wrong. No argument was provided and the TARGET_ORG_ALIAS
-    # has not yet been set or is an empty string.  Raise an error message and
-    # then exit 1 to kill the script.
-    echoErrorMsg "Could not execute createScratchOrg(). Unknown target org alias."
-    exit 1
+    SCRATCH_CONFIG="$1"
   fi
 
-  # Create a new scratch org using the scratch-def.json locally configured for this project.
-  echoStepMsg "Create a new $ORG_ALIAS_TO_CREATE scratch org"
-  echo "Executing force:org:create -f $SCRATCH_ORG_CONFIG -a $ORG_ALIAS_TO_CREATE -v $DEV_HUB_ALIAS -s -d 29"
-  (cd $PROJECT_ROOT && exec sfdx force:org:create -f $SCRATCH_ORG_CONFIG -a $ORG_ALIAS_TO_CREATE -v $DEV_HUB_ALIAS -s -d 29)
+  # Set default org alias to use use the one passed in
+  local ORG_ALIAS=$2
+  if [ -z "$2" ]; then
+    ORG_ALIAS="$SCRATCH_ORG_ALIAS"
+  else
+    ORG_ALIAS="$2"
+  fi
+
+  # Create a new scratch org using the specified or default alias and config.
+  echoStepMsg "Create a new scratch org with alias: $ORG_ALIAS"
+  echo "Executing force:org:create -f $SCRATCH_CONFIG -a $ORG_ALIAS -v $DEV_HUB_ALIAS -s -d 29"
+  (cd $PROJECT_ROOT && exec sfdx force:org:create -f $SCRATCH_CONFIG -a $ORG_ALIAS -v $DEV_HUB_ALIAS -s -d 29)
   if [ $? -ne 0 ]; then
-    echoErrorMsg "Scratch org \"$ORG_ALIAS_TO_CREATE\"could not be created. Aborting Script."
+    echoErrorMsg "Scratch org could not be created. Aborting Script."
     exit 1
   fi
 }
