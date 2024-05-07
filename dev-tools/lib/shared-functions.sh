@@ -84,9 +84,13 @@ confirmChoice () {
   # Show the question being asked.
   echo "`tput rev`$2`tput sgr0`"
   # Save the user's response to the variable provided by the caller.
-  local confirmationOptions=("yes" "y" "sure" "uh-huh" "yeah" "why not?" "yep" "ok" "*nods*" "nod")
   read -p "(type YES to confirm, or hit ENTER to cancel) " USER_RESPONSE
-  if [[ " ${confirmationOptions[@]} " =~ " $USER_RESPONSE " ]]; then
+  # Convert USER_RESPONSE to lowercase
+  USER_RESPONSE_LOWER=$(echo "$USER_RESPONSE" | tr '[:upper:]' '[:lower:]' )
+  # Set possible positive answers
+  local confirmationOptions=("yes" "y" "sure" "uh-huh" "yeah" "why not?" "yep" "ok" "*nods*" "nod")
+  # Check if the answer given is in the list of possibles
+  if [[ " ${confirmationOptions[@]} " =~ " $USER_RESPONSE_LOWER " ]]; then
     eval "$1=true"
   else
     eval "$1=false"
@@ -116,30 +120,71 @@ confirmWithAbort () {
 ##
 #
 createScratchOrg() {
-  # Set default scratch config or use the one passed in
-  local SCRATCH_CONFIG=$1
-  if [ -z "$1" ]; then
-    SCRATCH_CONFIG="$SCRATCH_ORG_CONFIG"
-  else
-    SCRATCH_CONFIG="$1"
-  fi
+  # Declare a local variable to store the Alias of the org to CREATE
+  local ORG_ALIAS_TO_CREATE=""
 
-  # Set default org alias to use use the one passed in
-  local ORG_ALIAS=$2
-  if [ -z "$2" ]; then
-    ORG_ALIAS="$SCRATCH_ORG_ALIAS"
+  # Check if a value was passed to this function in Argument 1.
+  # If there was we will make that the org alias to CREATE.
+  if [ ! -z $1 ]; then
+    ORG_ALIAS_TO_CREATE="$1"
+  elif [ ! -z $TARGET_ORG_ALIAS ]; then
+    ORG_ALIAS_TO_CREATE="$TARGET_ORG_ALIAS"
   else
-    ORG_ALIAS="$2"
-  fi
-
-  # Create a new scratch org using the specified or default alias and config.
-  echoStepMsg "Create a new scratch org with alias: $ORG_ALIAS"
-  echo "Executing force:org:create -f $SCRATCH_CONFIG -a $ORG_ALIAS -v $DEV_HUB_ALIAS -s -d 29"
-  (cd $PROJECT_ROOT && exec sfdx force:org:create -f $SCRATCH_CONFIG -a $ORG_ALIAS -v $DEV_HUB_ALIAS -s -d 29)
-  if [ $? -ne 0 ]; then
-    echoErrorMsg "Scratch org could not be created. Aborting Script."
+    # Something went wrong. No argument was provided and the TARGET_ORG_ALIAS
+    # has not yet been set or is an empty string.  Raise an error message and
+    # then exit 1 to kill the script.
+    echoErrorMsg "Could not execute createScratchOrg(). Unknown target org alias."
     exit 1
   fi
+
+  # Create a new scratch org using the scratch-def.json locally configured for this project.
+  echoStepMsg "Create a new $ORG_ALIAS_TO_CREATE scratch org"
+  echo "Executing force:org:create -f $SCRATCH_ORG_CONFIG -a $ORG_ALIAS_TO_CREATE -v $DEV_HUB_ALIAS -s -d 29"
+  (cd $PROJECT_ROOT && exec sfdx force:org:create -f $SCRATCH_ORG_CONFIG -a $ORG_ALIAS_TO_CREATE -v $DEV_HUB_ALIAS -s -d 29)
+  if [ $? -ne 0 ]; then
+    echoErrorMsg "Scratch org \"$ORG_ALIAS_TO_CREATE\"could not be created. Aborting Script."
+    exit 1
+  fi
+}
+#
+##
+###
+#### FUNCTION: createTestClassList () #################################################################
+###
+##
+#
+createTestClassList() {
+  folder="./"
+  count=0
+
+  # Array to store matching filenames
+  matching_filenames=()
+  strings_to_match=("@isTest" "@IsTest" "@istest", "@ISTEST")
+
+  ## Find all .cls files in the folder and its subdirectories
+  while IFS= read -r -d '' file; do
+      # Check if the file contains any string from the array
+      for pattern in "${strings_to_match[@]}"; do
+          if grep -q "$pattern" "$file"; then
+              # Echo the file name without extension
+              filename=$(basename -- "$file")
+              filename_no_ext="${filename%.*}"
+              matching_filenames+=("$filename_no_ext")  # Append to the array
+              ((count++))  # Increment the count variable
+              break  # Break out of the loop if any pattern is found
+          fi
+      done
+  done < <(find "$folder" -type f -name "*.cls" -print0)
+
+
+  # Combine array elements into a comma-separated string
+  matching_filenames_string=$(IFS=,; echo "${matching_filenames[*]}")
+  # Output the matching filenames string to a file
+  output_file="./dev-tools/temp/test_classes.txt"
+  mkdir -p "$(dirname "$output_file")"  # Create the directory if it doesn't exist
+  echo "$matching_filenames_string" > "$output_file"
+
+  echo "Test classes to run: $count"
 }
 #
 ##
@@ -278,21 +323,23 @@ assignPermset () {
 ##
 #
 createScratchOrg() {
+  # Set default scratch config or use the one passed in
   local SCRATCH_CONFIG=$1
-  # Set default scratch config
   if [ -z "$1" ]; then
     SCRATCH_CONFIG="$SCRATCH_ORG_CONFIG"
   else
     SCRATCH_CONFIG="$1"
   fi
+
+  # Set default org alias to use use the one passed in
   local ORG_ALIAS=$2
-  # Set default org alias
   if [ -z "$2" ]; then
     ORG_ALIAS="$SCRATCH_ORG_ALIAS"
   else
     ORG_ALIAS="$2"
   fi
-  # Create a new scratch org using the scratch-def.json locally configured for this project.
+
+  # Create a new scratch org using the specified or default alias and config.
   echoStepMsg "Create a new scratch org with alias: $ORG_ALIAS"
   echo "Executing force:org:create -f $SCRATCH_CONFIG -a $ORG_ALIAS -v $DEV_HUB_ALIAS -s -d 29"
   (cd $PROJECT_ROOT && exec sfdx force:org:create -f $SCRATCH_CONFIG -a $ORG_ALIAS -v $DEV_HUB_ALIAS -s -d 29)
@@ -325,6 +372,45 @@ deleteScratchOrg () {
   echoStepMsg "Delete the $ORG_ALIAS scratch org"
   echo "Executing force:org:delete -p -u $ORG_ALIAS -v $DEV_HUB_ALIAS"
   (cd $PROJECT_ROOT && exec sfdx force:org:delete -p -u $ORG_ALIAS -v $DEV_HUB_ALIAS )
+}
+#
+##
+###
+#### FUNCTION: executeAnonymousApex () ####################################################################
+###
+##
+#
+executeAnonymousApex () {
+  # Get Apex file path from parameter or ask for it
+  filePath="$1"
+
+  # Run anonymous Apex with the Salesforce CLI
+  OUTPUT=$(sfdx force:apex:execute -f "$filePath")
+  EXIT_CODE="$?"
+
+  # Check Salesforce CLI exit code
+  if [ "$EXIT_CODE" -eq 0 ]; then
+      # Check for Apex runtime error
+      APEX_ERRORS=$(echo "$OUTPUT" | grep 'Error: ')
+      if [ "$APEX_ERRORS" != '' ]; then
+        # Log errors
+        echo "Apex runtime error:"
+        echo "$APEX_ERRORS"
+        EXIT_CODE=-1;
+      else
+        # Keep debug log lines only
+        OUTPUT=$(echo "$OUTPUT" | grep 'USER_DEBUG')
+        # Simplify debug log: keep time stamp, line number and message only
+        OUTPUT=$(echo "$OUTPUT" | sed -E 's,([0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]+) \([0-9]+\)\|USER_DEBUG\|\[([0-9]+)\]\|DEBUG\|(.*),\1\tLine \2\t\3,')
+        echo "$OUTPUT"
+      fi
+  else
+      # Salesforce CLI error
+      echo "Salesforce CLI failed to execute anonymous Apex:"
+      echo "$OUTPUT"
+  fi
+  echo ""
+  exit $EXIT_CODE
 }
 #
 ##
@@ -393,51 +479,6 @@ installPackage () {
   # Determine the total runtime (in seconds) and show the user.
   local totalRuntime=$((endTime-startTime))
   echo "Total runtime for package installation was $totalRuntime seconds."
-}
-#
-##
-###
-#### FUNCTION: isDevHub () ###################################################################
-###
-##
-#
-isDevHub(){
-  # return a json result of
-  org="$(sfdx force:org:display -u ${DEV_HUB_ALIAS} --json)"
-
-  # parse response
-  result="$(echo ${org} | jq -r .result)"
-  accessToken="$(echo ${result} | jq -r .accessToken)"
-  instanceUrl="$(echo ${result} | jq -r .instanceUrl)"
-  id="$(echo ${result} | jq -r .id)"
-
-  # use curl to call the Tooling API and run a query
-  query="SELECT+DurableId,+SettingValue+FROM+OrganizationSettingsDetail+WHERE+SettingName+\=+\'ScratchOrgManagementPref\'"
-  http="${instanceUrl}/services/data/v40.0/tooling/query/\?q\=${query}"
-  flags="-H 'Authorization: Bearer ${accessToken}'"
-  hub=$(eval curl $http $flags --silent)
-
-  # parse response
-  size="$(echo ${hub} | jq -r .size)"
-
-  if [[ $size -eq 0 ]];
-  then
-    echo "${id} is not a dev hub"
-    exit 0
-  fi
-
-  records="$(echo ${hub} | jq -r .records)"
-  value="$(echo ${records} | jq -r .[].SettingValue)"
-
-  # evaluate the setting value
-  if $value === 'true'
-  then
-    echo "${id} is a dev hub"
-  else
-    echo "${id} is not a dev hub"
-  fi
-
-exit 0
 }
 #
 ##
@@ -524,29 +565,29 @@ echoWarningMsg () {
 ##
 #
 findProjectRoot () {
-  # Detect the path to the directory that the running script was called from.
-  local PATH_TO_RUNNING_SCRIPT="$( cd "$(dirname "$0")" ; pwd -P )"
 
-  # Grab the last 10 characters of the detected path.  This should be "/dev-tools".
-  local DEV_TOOLS_SLICE=${PATH_TO_RUNNING_SCRIPT: -10}
+  # Start from the current directory
+  current_dir=$(realpath .)
 
-  # Make sure the last 10 chars of the path are "/dev-tools".
-  # Kill the script with an error if not.
-  if [[ $DEV_TOOLS_SLICE != "/dev-tools" ]]; then
-    echoErrorMsg "Script was not executed within the <project-root>/dev-tools directory."
-    tput sgr 0; tput bold;
-    echo "Shell scripts that utilize FALCON Developer Tools must be executed from"
-    echo "inside the dev-tools directory found at the root of your SFDX project.\n"
+  # Look for the "dev-tools" directory by traversing up the directory structure
+  while [[ "$current_dir" != "/" ]]; do
+    if [[ -d "$current_dir/dev-tools" ]]; then
+      root_dir="$current_dir"
+      break
+    fi
+    current_dir=$(dirname "$current_dir")
+  done
+
+  # Check if the "dev-tools" parent directory was found
+  if [[ -z "$root_dir" ]]; then
+    echo "FATAL ERROR: `tput sgr0``tput setaf 1`Could not find the project root directory (defined as one level UP from the dev-tools folder)."
+    echo "FATAL ERROR: `tput sgr0``tput setaf 1`PLEASE NOTE: Scripts must be run from any folder below the dev-tools folder."
     exit 1
   fi
-
-  # Calculate the Project Root path by going up one level from the path currently
-  # held in the PATH_TO_RUNNING_SCRIPT variable
-  local PATH_TO_PROJECT_ROOT="$( cd "$PATH_TO_RUNNING_SCRIPT" ; cd .. ; pwd -P )"
-
+  
   # Pass the value of the "detected path" back out to the caller by setting the
   # value of the first argument provided when the function was called.
-  eval "$1=\"$PATH_TO_PROJECT_ROOT\""
+  eval "$1=\"$root_dir\""
 }
 #
 ##
@@ -642,6 +683,29 @@ pushMetadata () {
     exit 1
   fi
 }
+
+replaceText () {
+    # Check if all three required arguments are provided
+    if [[ $# -lt 3 ]]; then
+        echo "Usage: $0 <file_path> <string_to_find> <new_string> [<suppress_echo>]"
+        exit 1
+    fi
+
+    # Check if the file exists
+    if [[ ! -f $1 ]]; then
+        echo "Error: File '$1' does not exist."
+        exit 1
+    fi
+
+    # Replace all occurrences of the string in the file and save the updated file IN PLACE
+    # NOTE: The optional sed parameter of the output file causes issues when replacing multiple values
+    sed -i "s/$2/$3/gI" "$1"
+
+    if [[ "$4" != -s ]]; then
+        echo "Replaced all occurences of '$2' with '$3'."
+    fi
+}
+
 #
 ##
 ###

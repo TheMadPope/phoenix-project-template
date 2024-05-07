@@ -1,14 +1,14 @@
 #!/bin/bash
 ####################################################################################################
 #
-# FILENAME:     install-pkg-in-sandbox
+# FILENAME:     uninstall-pkg-from-sandbox.sh
 #
-# PURPOSE:      Installs a 04t package into a sandbox org
+# PURPOSE:      Uninstalls a 04t package from a sandbox org
 #
 # DESCRIPTION:  TODO: Write descritption
 #
 # INSTRUCTIONS: Execute the following command relative to your project's root directory:  
-#               ./dev-tools/install-pkg-in-sandbox
+#               . ./dev-tools/uninstall-pkg-from-sandbox.sh
 #
 # RELATED DOCS: TODO: ?????
 #               └─ https://???.???.com
@@ -19,16 +19,40 @@
 #
 #### LOAD SHARED FUNCTIONS LIBRARY #################################################################
 #
-if [ ! -r `dirname $0`/lib/shared-functions.sh ]; then
-  echo "\nFATAL ERROR: `tput sgr0``tput setaf 1`Could not load dev-tools/lib/shared-functions.sh.  File not found.\n"
+# Make sure that the shared-functions.sh script exists.
+# Start from the current directory
+current_dir=$(realpath .)
+
+# Look for the "dev-tools" directory by traversing up the directory structure
+while [[ "$current_dir" != "/" ]]; do
+  if [[ -d "$current_dir/dev-tools" ]]; then
+    root_dir="$current_dir/dev-tools"
+    break
+  fi
+  current_dir=$(dirname "$current_dir")
+done
+
+# Check if the "dev-tools" directory was found
+if [[ -z "$root_dir" ]]; then
+  echo "FATAL ERROR: `tput sgr0``tput setaf 1`Could not find the dev-tools directory."
   exit 1
 fi
-source `dirname $0`/lib/shared-functions.sh
+
+# Now you can use "$root_dir" as the root directory
+lib_path="$root_dir/lib/shared-functions.sh"
+if [[ ! -r "$lib_path" ]]; then
+  echo "FATAL ERROR: `tput sgr0``tput setaf 1`Could not load $lib_path. File not found."
+  exit 1
+fi
+
+# Load the shared-functions.sh library.  This action will also cause the
+# config variables from dev-tools/lib/local-config.sh to be loaded.
+source "$lib_path"
 #
 #
 #### CONFIRM SCRIPT EXECUTION ######################################################################
 #
-confirmScriptExecution "Do you want to INSTALL a package into the specified sandbox org?"
+confirmScriptExecution "Do you want to UNINSTALL a package from the specified sandbox org?"
 #
 #
 #### CREATE LOCAL VARIABLES ########################################################################
@@ -36,34 +60,32 @@ confirmScriptExecution "Do you want to INSTALL a package into the specified sand
 # No local variables are used by this script.
 #
 #
-#### INSTALL PACKAGE INTO SANDBOX ##################################################################
+#### UNINSTALL PACKAGE FROM SANDBOX ##################################################################
 #
 #### 0. Reset the Step Message counter and set the TOTAL STEPS to 2.
 resetStepMsgCounter 2
 
-#### 1. Attempt to install the specified package into the target subscriber org.
-echoStepMsg "Attempt to install package $PACKAGE_VERSION_ID into the org aliased as $SUBSCRIBER_SANDBOX_ALIAS"
+#### 1. Attempt to uninstall the specified package from the target subscriber sandbox org.
+echoStepMsg "Attempt to uninstall package $PACKAGE_VERSION_ID from the org aliased as $SUBSCRIBER_SANDBOX_ALIAS"
 echo \
-"Executing sfdx force:package:install \\
+"Executing sfdx force:package:uninstall \\
                 --id $PACKAGE_VERSION_ID \\
                 --wait 15 \\
-                --publishwait 10 \\
                 --targetusername $SUBSCRIBER_SANDBOX_ALIAS \\
                 --loglevel error\n"
-(cd $PROJECT_ROOT && exec sfdx force:package:install \
+(cd $PROJECT_ROOT && exec sfdx force:package:uninstall \
                                 --id $PACKAGE_VERSION_ID \
                                 --wait 15 \
-                                --publishwait 10 \
                                 --targetusername $SUBSCRIBER_SANDBOX_ALIAS \
                                 --loglevel error)
 
 # Check if the previous command executed successfully. If not, abort this script.
 if [ $? -ne 0 ]; then
-  echoErrorMsg "Package installation was not successful."
+  echoErrorMsg "Package removal from $SUBSCRIBER_SANDBOX_ALIAS was not successful."
 fi
 
 #### 2. List all of the packages installed in the target subscriber org.
-echoStepMsg "List all packages installed in $SUBSCRIBER_SANDBOX_ALIAS"
+echoStepMsg "List all packages that remain in $SUBSCRIBER_SANDBOX_ALIAS"
 echo "List of packages currently installed in $SUBSCRIBER_SANDBOX_ALIAS.\n"
 (cd $PROJECT_ROOT && exec sfdx force:package:installed:list \
                                 --targetusername $SUBSCRIBER_SANDBOX_ALIAS \
@@ -72,6 +94,7 @@ echo "List of packages currently installed in $SUBSCRIBER_SANDBOX_ALIAS.\n"
 #
 #### ECHO CLOSING SUCCESS MESSAGE ##################################################################
 #
-echoScriptCompleteMsg "Package installation script complete"
+echoScriptCompleteMsg "Package removal script complete"
+
 
 ##END##

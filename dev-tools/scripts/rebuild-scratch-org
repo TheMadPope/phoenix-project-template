@@ -3,35 +3,53 @@
 #
 # FILENAME:     rebuild-scratch-org
 #
-# PURPOSE:      Deletes then recreates a scratch org without any customizations - standard Salesforce only.
+# PURPOSE:      Deletes then recreates a scratch org based on the SFDX source in this project.
 #
 # DESCRIPTION:  Executing this script will first delete the exisisting default scratch org for
 #               this project (if it exists), then create a new one using the source and config
 #               information defined in your dev-tools/lib/local-config.sh file.
 #
 # INSTRUCTIONS: Execute the following command from the root of your SFDX project directory.
-#               ./dev-tools/rebuild-generic-scratch-org
+#               ./dev-tools/rebuild-scratch-org
 #
 ####################################################################################################
 #
 ##
 ###
 #### LOAD SHARED FUNCTIONS LIBRARY #################################################################
-###
-##
 #
 # Make sure that the shared-functions.sh script exists.
-if [ ! -r `dirname $0`/lib/shared-functions.sh ]; then
-  echo "\nFATAL ERROR: `tput sgr0``tput setaf 1`Could not load dev-tools/lib/shared-functions.sh.  File not found.\n"
+# Start from the current directory
+current_dir=$(realpath .)
+
+# Look for the "dev-tools" directory by traversing up the directory structure
+while [[ "$current_dir" != "/" ]]; do
+  if [[ -d "$current_dir/dev-tools" ]]; then
+    root_dir="$current_dir/dev-tools"
+    break
+  fi
+  current_dir=$(dirname "$current_dir")
+done
+
+# Check if the "dev-tools" directory was found
+if [[ -z "$root_dir" ]]; then
+  echo "FATAL ERROR: `tput sgr0``tput setaf 1`Could not find the dev-tools directory."
+  exit 1
+fi
+
+# Now you can use "$root_dir" as the root directory
+lib_path="$root_dir/lib/shared-functions.sh"
+if [[ ! -r "$lib_path" ]]; then
+  echo "FATAL ERROR: `tput sgr0``tput setaf 1`Could not load $lib_path. File not found."
   exit 1
 fi
 
 # Indicate the operation being carried out by this script.
-REQUESTED_OPERATION="REBUILD_GENERIC_SCRATCH_ORG"
+REQUESTED_OPERATION="REBUILD_SCRATCH_ORG"
 
 # Load the shared-functions.sh library.  This action will also cause the
 # config variables from dev-tools/lib/local-config.sh to be loaded.
-source `dirname $0`/lib/shared-functions.sh
+source "$lib_path"
 #
 ##
 ###
@@ -39,7 +57,7 @@ source `dirname $0`/lib/shared-functions.sh
 ###
 ##
 #
-confirmWithAbort "Do you want to rebuild a GENERIC (no custom code, just default Salesforce instance) scratch org?"
+confirmWithAbort "Do you want to rebuild your scratch org?"
 #
 ##
 ###
@@ -50,7 +68,6 @@ confirmWithAbort "Do you want to rebuild a GENERIC (no custom code, just default
 # The default version of this script does not require additional local
 # variables.  If your customized script does require them, this is where
 # you would define and initialize them.
-
 #
 ##
 ###
@@ -61,16 +78,34 @@ confirmWithAbort "Do you want to rebuild a GENERIC (no custom code, just default
 # STEP 0
 # Reset the Step Message counter to reflect the number of TOTAL STEPS
 # in your rebuild process. For the baseline SFDX-Falcon template it's 4.
-resetStepMsgCounter 3
+resetStepMsgCounter 7
 
 # STEPS 1 and 2
 # Delete the current scratch org.
-deleteScratchOrg "generic-scratch"
+deleteScratchOrg
 
 # STEP 3
 # Create a new scratch org using the scratch-def.json locally configured for this project.
-createScratchOrg "generic-scratch"
+createScratchOrg
 
+# STEP 4 through ???
+# Install any packages (managed or unmanaged).
+# Template for calling this function:
+# installPackage #PACKAGE_VERSION_ID# \
+#                "#PACKAGE_NAME#" \
+#                "#STEP_MESSAGE#"
+
+# STEP 6
+# Push metadata to the new Scratch Org.
+pushMetadata
+
+# Assign any permission sets
+#assignPermset "permsetName1, permsetName12, permsetName3, permsetName4"
+
+# STEP 8 through ????
+# Import data used during development. You may need to make multiple calls
+# Template for calling this function:
+# importData "$PROJECT_ROOT/data/#DATA_PLAN_JSON#"
 
 #
 ##
@@ -80,7 +115,7 @@ createScratchOrg "generic-scratch"
 ##
 #
 echoScriptCompleteMsg \
-"Rebuild of scratch org completed successfully; Alias: generic-scratch"
+"Rebuild of scratch org completed successfully; Alias: $SCRATCH_ORG_ALIAS"
 
 exit 0
 
