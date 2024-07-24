@@ -1,6 +1,7 @@
 # Salesforce DX Project: Next Steps
 
 Now that you’ve created a Salesforce DX project, what’s next? Here are some documentation resources to get you started.
+
 [This template](https://github.com/TheMadPope/phoenix-project-template) is heavily based on [this template](https://github.com/sfdx-isv/sfdx-falcon-template), but includes additional scripts and tools to accelerate development
 
 ## How Do You Plan to Deploy Your Changes?
