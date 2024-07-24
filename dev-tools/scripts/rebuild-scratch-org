@@ -13,11 +13,8 @@
 #               ./dev-tools/rebuild-scratch-org
 #
 ####################################################################################################
-#
-##
-###
+
 #### LOAD SHARED FUNCTIONS LIBRARY #################################################################
-#
 # Make sure that the shared-functions.sh script exists.
 # Start from the current directory
 current_dir=$(realpath .)
@@ -50,72 +47,44 @@ REQUESTED_OPERATION="REBUILD_SCRATCH_ORG"
 # Load the shared-functions.sh library.  This action will also cause the
 # config variables from dev-tools/lib/local-config.sh to be loaded.
 source "$lib_path"
-#
-##
-###
+
 #### CONFIRM SCRIPT EXECUTION ######################################################################
-###
-##
-#
 confirmWithAbort "Do you want to rebuild your scratch org?"
-#
-##
-###
+
 #### CREATE LOCAL VARIABLES ########################################################################
-###
-##
-#
 # The default version of this script does not require additional local
 # variables.  If your customized script does require them, this is where
 # you would define and initialize them.
-#
-##
-###
+
 #### SCRATCH ORG SETUP (DELETE/CREATE/PUSH) ########################################################
-###
-##
-#
 # STEP 0
 # Reset the Step Message counter to reflect the number of TOTAL STEPS
 # in your rebuild process. For the baseline SFDX-Falcon template it's 4.
 resetStepMsgCounter 7
 
-# STEPS 1 and 2
 # Delete the current scratch org.
 deleteScratchOrg
 
-# STEP 3
 # Create a new scratch org using the scratch-def.json locally configured for this project.
 createScratchOrg
 
-# STEP 4 through ???
 # Install any packages (managed or unmanaged).
 # Template for calling this function:
-# installPackage #PACKAGE_VERSION_ID# \
-#                "#PACKAGE_NAME#" \
-#                "#STEP_MESSAGE#"
+# installPackage #PACKAGE_VERSION_ID# #PACKAGE_NAME# "#STEP_MESSAGE#"
 
-# STEP 6
 # Push metadata to the new Scratch Org.
 pushMetadata
 
 # Assign any permission sets
-#assignPermset "permsetName1, permsetName12, permsetName3, permsetName4"
+# assignPermset permsetName1
+# assignPermset permsetName2
 
-# STEP 8 through ????
 # Import data used during development. You may need to make multiple calls
 # Template for calling this function:
 # importData "$PROJECT_ROOT/data/#DATA_PLAN_JSON#"
 
-#
-##
-###
 #### ECHO CLOSING MESSAGE ##########################################################################
-###
-##
-#
-echoScriptCompleteMsg \
-"Rebuild of scratch org completed successfully; Alias: $SCRATCH_ORG_ALIAS"
+echoScriptCompleteMsg "Rebuild of scratch org completed successfully; Alias: $SCRATCH_ORG_ALIAS"
 
 exit 0
 
