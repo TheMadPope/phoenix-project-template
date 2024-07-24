@@ -31,7 +31,9 @@ if [ "$SFDX_PHOENIX_FRAMEWORK_SHELL_VARS_SET" = "true" ]; then
 fi
 
 #### FUNCTIONS #####################################################################################
+
 #REGION A
+
 askUserForStringValue () {
   # If a second argument was provided, echo its
   # value before asking the user for input.
@@ -81,6 +83,7 @@ assignPermset () {
     echoErrorMsg "Permission set \"$1\" could not be assigned"
   fi
 }
+
 #END REGION A
 
 #REGION B
