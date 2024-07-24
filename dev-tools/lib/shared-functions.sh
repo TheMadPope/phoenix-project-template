@@ -13,17 +13,11 @@
 #               set in the user's shell, and any changes to local-config.sh may not be picked up
 #               until the user manually exits their shell and opens a new one.
 #
-#
 ####################################################################################################
-#
-##
-###
+
 #### PREVENT RELOAD OF THIS LIBRARY ################################################################
-###
-##
-#
-if [ "$SFDX_FALCON_FRAMEWORK_SHELL_VARS_SET" = "true" ]; then
-  # The SFDX_FALCON_FRAMEWORK_SHELL_VARS_SET variable is defined as part of
+if [ "$SFDX_PHOENIX_FRAMEWORK_SHELL_VARS_SET" = "true" ]; then
+  # The SFDX_PHOENIX_FRAMEWORK_SHELL_VARS_SET variable is defined as part of
   # this project's local configuration script (local-config.sh).  If this
   # variable holds the string "true" then it means that local-config.sh has
   # already been sourced (loaded).  Since this is exactly what THIS script
@@ -35,13 +29,11 @@ if [ "$SFDX_FALCON_FRAMEWORK_SHELL_VARS_SET" = "true" ]; then
   # first to load this.
   return 0
 fi
-#
-##
-###
-#### FUNCTION: askUserForStringValue ###############################################################
-###
-##
-#
+
+#### FUNCTIONS #####################################################################################
+
+#REGION A
+
 askUserForStringValue () {
   # If a second argument was provided, echo its
   # value before asking the user for input.
@@ -71,13 +63,34 @@ askUserForStringValue () {
     fi
   done
 }
-#
-##
-###
-#### FUNCTION: confirmChoice #######################################################################
-###
-##
-#
+
+assignPermset () {
+  # Assign permission sets to the current user.
+  # Pass in the DEVELOPER NAME of the permission set
+  local USER=$2
+  if [ -z "$2" ]; then
+    USER="$SCRATCH_ORG_ALIAS"
+  else
+    USER="$2"
+  fi
+  echoStepMsg "Assign the $1 permission set to the current user"
+  command="sf org assign permset --name $1 --json"
+  echo "Executing: $command"
+  json_output=$(cd $PROJECT_ROOT && eval $command)
+
+  status=$(echo "$json_output" | jq -r '.status')
+  if [ "$status" != "0" ]; then
+    echoErrorMsg "Permission set \"$1\" could not be assigned"
+  fi
+}
+
+#END REGION A
+
+#REGION B
+#END REGION B
+
+#REGION C
+
 confirmChoice () {
   # Local variable will store the user's response.
   local USER_RESPONSE=""
@@ -96,13 +109,7 @@ confirmChoice () {
     eval "$1=false"
   fi
 }
-#
-##
-###
-#### FUNCTION: confirmScriptExecution ##############################################################
-###
-##
-#
+
 confirmWithAbort () {
   local confirmExecution=false
   confirmChoice confirmExecution "$1"
@@ -112,13 +119,7 @@ confirmWithAbort () {
   fi
   echo ""
 }
-#
-##
-###
-#### FUNCTION: createScratchOrg () #################################################################
-###
-##
-#
+
 createScratchOrg() {
   # Declare a local variable to store the Alias of the org to CREATE
   local ORG_ALIAS_TO_CREATE=""
@@ -146,13 +147,7 @@ createScratchOrg() {
     exit 1
   fi
 }
-#
-##
-###
-#### FUNCTION: createTestClassList () #################################################################
-###
-##
-#
+
 createTestClassList() {
   folder="./"
   count=0
@@ -186,13 +181,10 @@ createTestClassList() {
 
   echo "Test classes to run: $count"
 }
-#
-##
-###
-#### FUNCTION: deleteScratchOrg () #################################################################
-###
-##
-#
+
+#END REGION C
+
+#REGION D
 deleteScratchOrg () {
   # Declare a local variable to store the Alias of the org to delete
   local ORG_ALIAS_TO_DELETE=""
@@ -216,13 +208,7 @@ deleteScratchOrg () {
   echo "Executing force:org:delete -p -u $ORG_ALIAS_TO_DELETE -v $DEV_HUB_ALIAS"
   (cd $PROJECT_ROOT && exec sfdx force:org:delete -p -u $ORG_ALIAS_TO_DELETE -v $DEV_HUB_ALIAS )
 }
-#
-##
-###
-#### FUNCTION: determineTargetOrgAlias () ##########################################################
-###
-##
-#
+
 determineTargetOrgAlias () {
   # Start by clearing TARGET_ORG_ALIAS so we'll know for sure if a new value was provided
   TARGET_ORG_ALIAS=""
@@ -259,13 +245,49 @@ determineTargetOrgAlias () {
     return 0
   fi
 }
-#
-##
-###
-#### FUNCTION: echoConfigVariables () ##############################################################
-###
-##
-#
+
+#END REGION D
+
+#REGION E
+
+echo_blank_lines() {
+    for ((i = 1; i <= $1; i++)); do
+        echo
+    done
+}
+
+echo_text_black_on_green() {
+    echo -e "\e[1;97;42m$1\e[0m"  # Black text on green background
+}
+
+echo_text_error() {
+    echo -e "\033[31;40mERROR :: $1\033[0m"  # Red text on black background
+}
+
+echo_text_green() {
+    echo -e "\033[32;40m$1\033[0m"  # Green text on black background
+}
+
+echo_text_ok() {
+    echo -e "\033[32;40mOK    :: $1\033[0m"  # Green text on black background
+}
+
+echo_text_red() {
+    echo -e "\033[31;40m$1\033[0m"  # Red text on black background
+}
+
+echo_text_white_on_black() {
+    echo -e "\e[30;47m$1\e[0m"  # Black text on white background
+}
+
+echo_text_white_on_black_bold() {
+    echo -e "\e[1;30;47m$1\e[0m"  # Black text on white background, bold
+}
+
+echo_text_white_on_red() {
+    echo -e "\033[31;41m$1\033[0m"  # Black text on red background
+}
+
 echoConfigVariables () {
   echo ""
   echo "`tput setaf 7`PROJECT_ROOT -------------->`tput sgr0` " $PROJECT_ROOT
@@ -284,108 +306,60 @@ echoConfigVariables () {
   echo "`tput setaf 7`ECHO_LOCAL_CONFIG_VARS ---->`tput sgr0` " $ECHO_LOCAL_CONFIG_VARS
   echo ""
 }
-#
-##
-###
-#### FUNCTION: assignPermset () ####################################################################
-###
-##
-#
-assignPermset () {
-  # Assign permission sets to the scratch org's Admin user.
-  # Pass in the DEVELOPER NAME of the permission set, OR a comma seperated list of developer names
-  local USER=$2
-  if [ -z "$2" ]; then
-    USER="$SCRATCH_ORG_ALIAS"
-  else
-    USER="$2"
-  fi
-  echoStepMsg "Assign the $1 permission set to the user $USER"
-  echo \
-  "Executing force:user:permset:assign \\
-              --permsetname "$1" \\
-              --targetusername $USER \\
-              --loglevel error\n"
-  (cd $PROJECT_ROOT && exec sfdx force:user:permset:assign \
-                                  --permsetname "$1" \
-                                  --targetusername $USER \
-                                  --loglevel error)
-  if [ $? -ne 0 ]; then
-    echoErrorMsg "Permission set(s) \"$1\" could not be assigned to the user $USER"
-    # Continue regardless, we probably want the rest of the process to complete
-  fi
-}
-#
-##
-###
-#### FUNCTION: createScratchOrg () #################################################################
-###
-##
-#
-createScratchOrg() {
-  # Set default scratch config or use the one passed in
-  local SCRATCH_CONFIG=$1
-  if [ -z "$1" ]; then
-    SCRATCH_CONFIG="$SCRATCH_ORG_CONFIG"
-  else
-    SCRATCH_CONFIG="$1"
-  fi
 
-  # Set default org alias to use use the one passed in
-  local ORG_ALIAS=$2
-  if [ -z "$2" ]; then
-    ORG_ALIAS="$SCRATCH_ORG_ALIAS"
-  else
-    ORG_ALIAS="$2"
-  fi
+echoErrorMsg () {
+  tput sgr 0; tput setaf 7; tput bold;
+  printf "\n\nERROR: "
+  tput sgr 0; tput setaf 1;
+  printf "%b\n\n" "$1"
+  tput sgr 0;
+}
 
-  # Create a new scratch org using the specified or default alias and config.
-  echoStepMsg "Create a new scratch org with alias: $ORG_ALIAS"
-  echo "Executing force:org:create -f $SCRATCH_CONFIG -a $ORG_ALIAS -v $DEV_HUB_ALIAS -s -d 29"
-  (cd $PROJECT_ROOT && exec sfdx force:org:create -f $SCRATCH_CONFIG -a $ORG_ALIAS -v $DEV_HUB_ALIAS -s -d 29)
-  if [ $? -ne 0 ]; then
-    echoErrorMsg "Scratch org could not be created. Aborting Script."
-    exit 1
-  fi
+echoQuestion () {
+  tput sgr 0; tput rev;
+  printf "\nQuestion $CURRENT_QUESTION of $TOTAL_QUESTIONS:"
+  printf " %b\n\n" "$1"
+  tput sgr 0;
+  let CURRENT_QUESTION++
 }
-#
-##
-###
-#### FUNCTION: deleteScratchOrg () #################################################################
-###
-##
-#
-deleteScratchOrg () {
-  local ORG_ALIAS=$1
-  # Set default org alias
-  if [ -z "$1" ]; then
-    ORG_ALIAS="$SCRATCH_ORG_ALIAS"
+
+echoScriptCompleteMsg () {
+  tput sgr 0; tput setaf 7; tput bold;
+  printf "\n\nScript Complete: "
+  tput sgr 0;
+  printf "%b\n\n" "$1"
+  tput sgr 0;
+}
+
+echoStepMsg () {
+  tput sgr 0; tput setaf 7; tput bold;
+  if [ $TOTAL_STEPS -gt 0 ]; then
+    ## This is one of a sequence of steps
+    printf "\nStep $CURRENT_STEP of $TOTAL_STEPS:"
   else
-    ORG_ALIAS="$1"
+    # This is likely a preliminary step, coming before a sequence.
+    printf "\nPreliminary Step $CURRENT_STEP:"
   fi
-  local confirmDelete=false
-  confirmChoice confirmDelete "Do you want to delete your existing scratch org with alias: $ORG_ALIAS?"
-  if [ "$confirmDelete" = false ] ; then
-    return
-  fi
-  # Delete the current scratch org.
-  echoStepMsg "Delete the $ORG_ALIAS scratch org"
-  echo "Executing force:org:delete -p -u $ORG_ALIAS -v $DEV_HUB_ALIAS"
-  (cd $PROJECT_ROOT && exec sfdx force:org:delete -p -u $ORG_ALIAS -v $DEV_HUB_ALIAS )
+  tput sgr 0;
+  printf " %b\n\n" "$1"
+  tput sgr 0;
+  let CURRENT_STEP++
 }
-#
-##
-###
-#### FUNCTION: executeAnonymousApex () ####################################################################
-###
-##
-#
+
+echoWarningMsg () {
+  tput sgr 0; tput setaf 7; tput bold;
+  printf "\n\nWARNING: "
+  tput sgr 0;
+  printf "%b\n\n" "$1"
+  tput sgr 0;
+}
+
 executeAnonymousApex () {
   # Get Apex file path from parameter or ask for it
   filePath="$1"
 
   # Run anonymous Apex with the Salesforce CLI
-  OUTPUT=$(sfdx force:apex:execute -f "$filePath")
+  OUTPUT=$(sf apex run --file "$filePath")
   EXIT_CODE="$?"
 
   # Check Salesforce CLI exit code
@@ -412,160 +386,12 @@ executeAnonymousApex () {
   echo ""
   exit $EXIT_CODE
 }
-#
-##
-###
-#### FUNCTION: importData () #######################################################################
-###
-##
-#
-importData () {
-  local USER=$2
-  if [ -z "$2" ]; then
-    USER="$SCRATCH_ORG_ALIAS"
-  else
-    USER="$2"
-  fi
-  # Setup development data
-  echoStepMsg "Import data from $1"
-  echo \
-  "Executing force:data:tree:import \\
-              --plan \"$1\" \\
-              --targetusername $USER \\
-              --loglevel error)\n"
-  (cd $PROJECT_ROOT && exec sfdx force:data:tree:import \
-                                  --plan "$1" \
-                                  --targetusername $USER \
-                                  --loglevel error)
-  if [ $? -ne 0 ]; then
-    echoErrorMsg "Data import failed. Aborting Script."
-    exit 1
-  fi
-}
-#
-##
-###
-#### FUNCTION: installPackage () ###################################################################
-###
-##
-#
-installPackage () {
-  # Echo the string provided by argument three. This string should provide the
-  # user with an easy-to-understand idea of what package is being installed.
-  echoStepMsg "$3"
-  local USER=$4
-  if [ -z "$4" ]; then
-    USER="$SCRATCH_ORG_ALIAS"
-  else
-    USER="$4"
-  fi
 
-  # Print the time (HH:MM:SS) when the installation started.
-  echo "Executing force:package:install -i $1 -p 5 -w 10 -u $USER"
-  echo "\n`tput bold`Package installation started at `date +%T``tput sgr0`\n"
-  local startTime=`date +%s`
+#END REGION E
 
-  # Perform the package installation.  If the installation fails abort the script.
-  (cd $PROJECT_ROOT && exec sfdx force:package:install -i $1 -p 5 -w 10 -u $USER)
-  if [ $? -ne 0 ]; then
-    echoErrorMsg "$2 could not be installed. Aborting Script."
-    exit 1
-  fi
+#REGION F
 
-  # Print the time (HH:MM:SS) when the installation completed.
-  echo "\n`tput bold`Package installation completed at `date +%T``tput sgr0`"
-  local endTime=`date +%s`
-
-  # Determine the total runtime (in seconds) and show the user.
-  local totalRuntime=$((endTime-startTime))
-  echo "Total runtime for package installation was $totalRuntime seconds."
-}
-#
-##
-###
-#### FUNCTION: echoErrorMsg () #####################################################################
-###
-##
-#
-echoErrorMsg () {
-  tput sgr 0; tput setaf 7; tput bold;
-  printf "\n\nERROR: "
-  tput sgr 0; tput setaf 1;
-  printf "%b\n\n" "$1"
-  tput sgr 0;
-}
-#
-##
-###
-#### FUNCTION: echoQuestion () #####################################################################
-###
-##
-#
-echoQuestion () {
-  tput sgr 0; tput rev;
-  printf "\nQuestion $CURRENT_QUESTION of $TOTAL_QUESTIONS:"
-  printf " %b\n\n" "$1"
-  tput sgr 0;
-  let CURRENT_QUESTION++
-}
-#
-##
-###
-#### FUNCTION: echoScriptCompleteMsg () ############################################################
-###
-##
-#
-echoScriptCompleteMsg () {
-  tput sgr 0; tput setaf 7; tput bold;
-  printf "\n\nScript Complete: "
-  tput sgr 0;
-  printf "%b\n\n" "$1"
-  tput sgr 0;
-}
-#
-##
-###
-#### FUNCTION: echoStepMsg () ######################################################################
-###
-##
-#
-echoStepMsg () {
-  tput sgr 0; tput setaf 7; tput bold;
-  if [ $TOTAL_STEPS -gt 0 ]; then
-    ## This is one of a sequence of steps
-    printf "\nStep $CURRENT_STEP of $TOTAL_STEPS:"
-  else
-    # This is likely a preliminary step, coming before a sequence.
-    printf "\nPreliminary Step $CURRENT_STEP:"
-  fi
-  tput sgr 0;
-  printf " %b\n\n" "$1"
-  tput sgr 0;
-  let CURRENT_STEP++
-}
-#
-##
-###
-#### FUNCTION: echoWarningMsg () ###################################################################
-###
-##
-#
-echoWarningMsg () {
-  tput sgr 0; tput setaf 7; tput bold;
-  printf "\n\nWARNING: "
-  tput sgr 0;
-  printf "%b\n\n" "$1"
-  tput sgr 0;
-}
-#
-##
-###
-#### FUNCTION: findProjectRoot () ##################################################################
-###
-##
-#
 findProjectRoot () {
-
   # Start from the current directory
   current_dir=$(realpath .)
 
@@ -589,13 +415,34 @@ findProjectRoot () {
   # value of the first argument provided when the function was called.
   eval "$1=\"$root_dir\""
 }
-#
-##
-###
-#### FUNCTION: initializeHelperVariables () ########################################################
-###
-##
-#
+
+#END REGION F
+
+#REGION G
+#END REGION G
+#REGION H
+#END REGION H
+
+#REGION I
+
+importData () {
+  local target_org=$2
+  if [ -z "$2" ]; then
+    target_org="$SCRATCH_ORG_ALIAS"
+  else
+    target_org="$2"
+  fi
+  # Setup development data
+  echoStepMsg "Import data from $1"
+  command="sf data import tree --target-org $target_org --plan $1"
+  echo "Executing: $command"
+  (cd $PROJECT_ROOT && exec $command)
+  if [ $? -ne 0 ]; then
+    echoErrorMsg "Data import failed. Aborting Script."
+    exit 1
+  fi
+}
+
 initializeHelperVariables () {
   CONFIRM_EXECUTION=""                                  # Indicates the user's choice whether to execute a script or not
   PROJECT_ROOT=""                                       # Path to the root of this SFDX project
@@ -610,43 +457,27 @@ initializeHelperVariables () {
   # the path to the root of this SFDX project
   findProjectRoot PROJECT_ROOT
 }
-#
-##
-###
-#### FUNCTION: installPackage () ###################################################################
-###
-##
-#
+
 installPackage () {
-  # Delcare a local variable to store the Alias of the target install org.
-  local PACKAGE_INSTALL_TARGET_ALIAS=""
-
-  # Check if a target org was provided as the FOURTH argument.  If there
-  # is no FOURTH argument, go with whatever is set in the TARGET_ORG_ALIAS
-  # variable.  If that is empty, then exit with an error.
-  if [ ! -z $4 ]; then
-    PACKAGE_INSTALL_TARGET_ALIAS="$4"
-  elif [ ! -z $TARGET_ORG_ALIAS ]; then
-    PACKAGE_INSTALL_TARGET_ALIAS="$TARGET_ORG_ALIAS"
-  else
-    # Something went wrong. No FOURTH argument was provided and the TARGET_ORG_ALIAS
-    # has not yet been set or is an empty string.  Raise an error message and
-    # then exit 1 to kill the script.
-    echoErrorMsg "Could not execute installPackage(). Unknown target org alias."
-    exit 1
-  fi
-
   # Echo the string provided by argument three. This string should provide the
   # user with an easy-to-understand idea of what package is being installed.
   echoStepMsg "$3"
+  local TARGET_ORG=$4
+  if [ -z "$4" ]; then
+    TARGET_ORG="$SCRATCH_ORG_ALIAS"
+  else
+    TARGET_ORG="$4"
+  fi
 
+  command="sf package install --package $1 --publish-wait 5 --wait 10 --target_org $TARGET_ORG"
+  echo "Executing: $command"
+  
   # Print the time (HH:MM:SS) when the installation started.
-  echo "Executing force:package:install --package $1 --publishwait 5 --wait 10 -u $PACKAGE_INSTALL_TARGET_ALIAS"
   echo "\n`tput bold`Package installation started at `date +%T``tput sgr0`\n"
   local startTime=`date +%s`
 
   # Perform the package installation.  If the installation fails abort the script.
-  (cd $PROJECT_ROOT && exec sfdx force:package:install --package $1 --publishwait 5 --wait 10 -u $PACKAGE_INSTALL_TARGET_ALIAS)
+  (cd $PROJECT_ROOT && exec $command)
   if [ $? -ne 0 ]; then
     echoErrorMsg "$2 could not be installed. Aborting Script."
     exit 1
@@ -660,28 +491,95 @@ installPackage () {
   local totalRuntime=$((endTime-startTime))
   echo "Total runtime for package installation was $totalRuntime seconds."
 }
-#
-##
-###
-#### FUNCTION: pushMetadata () #####################################################################
-###
-##
-#
+
+#END REGION I
+
+#REGION J
+#END REGION J
+#REGION K
+#END REGION K
+#REGION L
+#END REGION L
+#REGION M
+#END REGION M
+#REGION N
+#END REGION N
+#REGION O
+#END REGION O
+
+#REGION P
+
 pushMetadata () {
-  local USER=$1
+  local target_org=$1
   if [ -z "$1" ]; then
-    USER="$SCRATCH_ORG_ALIAS"
+    target_org="$SCRATCH_ORG_ALIAS"
   else
-    USER="$1"
+    target_org="$1"
   fi
   # Push metadata to the new Scratch Org.
-  echoStepMsg "Push metadata to the new org $USER"
-  echo "Executing force:source:push -u $USER"
-  (cd $PROJECT_ROOT && exec sfdx force:source:push -u $USER)
+  echoStepMsg "Push metadata to the new org $target_org"
+  command="sf project deploy start --target-org $target_org"
+  echo "Executing: $command"
+  (cd $PROJECT_ROOT && exec $command)
   if [ $? -ne 0 ]; then
     echoErrorMsg "SFDX source could not be pushed to the scratch org. Aborting Script."
     exit 1
   fi
+}
+
+#END REGION P
+
+#REGION Q
+#END REGION Q
+
+#REGION R
+
+refreshSandbox () {
+    local ORG_TO_USE=$1
+    local SANDBOX_NAME=$2
+    #echo "ORG_TO_USE: $ORG_TO_USE"
+    #echo "SANDBOX_NAME: $SANDBOX_NAME"
+
+    local initialConfirm=false
+    confirmChoice initialConfirm "Do you want to refresh this Sandbox? Name: $SANDBOX_NAME?"
+    if [ "$initialConfirm" = false ] ; then
+        echo "Cancelling Sandbox refresh."
+        exit 0
+    fi
+
+    # return a json result of
+    org="$(sf org display --target-org ${ORG_TO_USE} --json)"
+
+    # parse response
+    result="$(echo ${org} | jq -r .result)"
+    accessToken="$(echo ${result} | jq -r .accessToken)"
+    instanceUrl="$(echo ${result} | jq -r .instanceUrl)"
+    id="$(echo ${result} | jq -r .id)"
+
+    # use curl to call the Tooling API and run a query
+    query="SELECT+Id,SandboxName+FROM+SandboxInfo+WHERE+SandboxName\=\'${SANDBOX_NAME}\'"
+    http="${instanceUrl}/services/data/v40.0/tooling/query/\?q\=${query}"
+    flags="-H 'Authorization: Bearer ${accessToken}'"
+    result=$(eval curl $http $flags --silent)
+
+    records="$(echo ${result} | jq -r .records)"
+    sandboxName="$(echo ${records} | jq -r .[0].SandboxName)"
+    sandboxId="$(echo ${records} | jq -r .[0].Id)"
+
+    local confirmRefresh=false
+    confirmChoice confirmRefresh "Do you really truly want to refresh this Sandbox? Name: $sandboxName; Id: $sandboxId???"
+    if [ "$confirmRefresh" = false ] ; then
+        echo "Cancelling Sandbox refresh."
+        exit 0
+    fi
+
+    echo "Executing Sandbox refresh..."
+    # use curl to refresh the sandbox
+    response=$(curl -X PATCH -H "Content-Type: application/json" -H "Authorization: Bearer $accessToken" -d '{"AutoActivate": true, "LicenseType": "DEVELOPER"}' "$instanceUrl/services/data/v40.0/tooling/sobjects/SandboxInfo/$sandboxId")
+    echo $response
+    echo "This should be going now. Go get some coffee and check back later!"
+
+    exit 0
 }
 
 replaceText () {
@@ -706,45 +604,24 @@ replaceText () {
     fi
 }
 
-#
-##
-###
-#### FUNCTION: resetQuestionCounter () #############################################################
-###
-##
-#
 resetQuestionCounter () {
   CURRENT_QUESTION=1
   TOTAL_QUESTIONS=$1
 }
-#
-##
-###
-#### FUNCTION: resetStepMsgCounter () ##############################################################
-###
-##
-#
+
 resetStepMsgCounter () {
   CURRENT_STEP=1
   TOTAL_STEPS=$1
 }
-#
-##
-###
-#### FUNCTION: showPressAnyKeyPrompt ###############################################################
-###
-##
-#
+
 showPressAnyKeyPrompt () {
   read -n 1 -sr -p "-- Press any Key to Continue --"
 }
-#
-##
-###
-#### FUNCTION: suggestDefaultValue #################################################################
-###
-##
-#
+
+#END REGION R
+
+#REGION S
+
 suggestDefaultValue () {
   # Make sure a value was provided for the
   # second argument of this function.
@@ -786,67 +663,25 @@ suggestDefaultValue () {
 
   return 0
 }
-#
-##
-###
-#### FUNCTION: refreshSandbox #################################################################
-###
-##
-#
-refreshSandbox () {
-    local ORG_TO_USE=$1
-    local SANDBOX_NAME=$2
-    #echo "ORG_TO_USE: $ORG_TO_USE"
-    #echo "SANDBOX_NAME: $SANDBOX_NAME"
 
-    local initialConfirm=false
-    confirmChoice initialConfirm "Do you want to refresh this Sandbox? Name: $SANDBOX_NAME?"
-    if [ "$initialConfirm" = false ] ; then
-        echo "Cancelling Sandbox refresh."
-        exit 0
-    fi
+#END REGION S
 
-    # return a json result of
-    org="$(sfdx force:org:display -u ${ORG_TO_USE} --json)"
+#REGION T
+#END REGION T
+#REGION U
+#END REGION U
+#REGION V
+#END REGION V
+#REGION W
+#END REGION W
+#REGION X
+#END REGION X
+#REGION Y
+#END REGION Y
+#REGION Z
+#END REGION Z
 
-    # parse response
-    result="$(echo ${org} | jq -r .result)"
-    accessToken="$(echo ${result} | jq -r .accessToken)"
-    instanceUrl="$(echo ${result} | jq -r .instanceUrl)"
-    id="$(echo ${result} | jq -r .id)"
-
-    # use curl to call the Tooling API and run a query
-    query="SELECT+Id,SandboxName+FROM+SandboxInfo+WHERE+SandboxName\=\'${SANDBOX_NAME}\'"
-    http="${instanceUrl}/services/data/v40.0/tooling/query/\?q\=${query}"
-    flags="-H 'Authorization: Bearer ${accessToken}'"
-    result=$(eval curl $http $flags --silent)
-
-    records="$(echo ${result} | jq -r .records)"
-    sandboxName="$(echo ${records} | jq -r .[0].SandboxName)"
-    sandboxId="$(echo ${records} | jq -r .[0].Id)"
-
-    local confirmRefresh=false
-    confirmChoice confirmRefresh "Do you really truly want to refresh this Sandbox? Name: $sandboxName; Id: $sandboxId???"
-    if [ "$confirmRefresh" = false ] ; then
-        echo "Cancelling Sandbox refresh."
-        exit 0
-    fi
-
-    echo "Executing Sandbox refresh..."
-    # use curl to refresh the sandbox
-    response=$(curl -X PATCH -H "Content-Type: application/json" -H "Authorization: Bearer $accessToken" -d '{"AutoActivate": true, "LicenseType": "DEVELOPER"}' "$instanceUrl/services/data/v40.0/tooling/sobjects/SandboxInfo/$sandboxId")
-    echo $response
-    echo "This should be going now. Go get some coffee and check back later!"
-
-    exit 0
-}
-#
-##
-###
 #### BEGIN MAIN EXECUTION BLOCK ####################################################################
-###
-##
-#
 # INITIALIZE HELPER VARIABLES
 initializeHelperVariables
 
@@ -879,7 +714,6 @@ source "$PROJECT_ROOT/$LOCAL_CONFIG_FILE_NAME"
 
 # MARK THAT LOCAL CONFIG VARIABLES HAVE BEEN SET.
 # Indicates that local config variables have been successfully set.
-SFDX_FALCON_FRAMEWORK_SHELL_VARS_SET="true"
-
+SFDX_PHOENIX_FRAMEWORK_SHELL_VARS_SET="true"
 
 ##END##
