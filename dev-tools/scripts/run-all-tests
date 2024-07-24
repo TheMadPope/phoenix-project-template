@@ -66,27 +66,10 @@ confirmScriptExecution "Do you want to run all tests currently deployed to your 
 resetStepMsgCounter 1
 
 # 1. Run all tests as human readable, with final output made to the temp directory.
-echoStepMsg "Run all tets currently deployed to $SCRATCH_ORG_ALIAS"
-echo \
-"Executing force:apex:test:run \\
-            --targetusername $SCRATCH_ORG_ALIAS \\
-            --testlevel RunLocalTests \\
-            --outputdir ./temp/apex-test-results \\
-            --resultformat human \\
-            --synchronous \\
-            --codecoverage \\
-            --loglevel error)\n"
-(cd $PROJECT_ROOT && exec sfdx force:apex:test:run \
-                                --targetusername $SCRATCH_ORG_ALIAS \
-                                --testlevel RunLocalTests \
-                                --outputdir ./temp/apex-test-results \
-                                --resultformat human \
-                                --codecoverage \
-                                --wait 15 \
-                                --loglevel error)
-
-
-# TODO: Need to add a check to see if force:source:convert worked.
+echoStepMsg "Run all (local) tests currently deployed to $SCRATCH_ORG_ALIAS"
+command="sf apex run test --test-level RunLocalTEsts --output-dir ./temp/apex-test-results --result-format human --synchronous --detailed-coverage"
+echo "Executing: $command"
+(cd $PROJECT_ROOT && exec $command)
 
 # Check if the previous command executed successfully. If not, abort this script.
 if [ $? -ne 0 ]; then
@@ -95,7 +78,6 @@ if [ $? -ne 0 ]; then
 fi
 
 #### ECHO CLOSING SUCCESS MESSAGE ##################################################################
-#
 echoScriptCompleteMsg "Tests complete.  Test results should be available in $PROJECT_ROOT/temp/apex-test-results"
 
 ##END##
