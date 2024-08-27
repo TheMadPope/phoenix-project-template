@@ -13,6 +13,9 @@
 #               set in the user's shell, and any changes to local-config.sh may not be picked up
 #               until the user manually exits their shell and opens a new one.
 #
+# JQ REQUIRED; TO INSTALL JQ:
+# WINDOWS: curl -L -o /usr/bin/jq.exe https://github.com/stedolan/jq/releases/latest/download/jq-win64.exe
+# MAC:     curl -L -o /usr/bin/jq.exe https://github.com/stedolan/jq/releases/download/jq-1.6/jq-osx-amd64
 ####################################################################################################
 
 #### PREVENT RELOAD OF THIS LIBRARY ################################################################
@@ -138,14 +141,29 @@ createScratchOrg() {
     exit 1
   fi
 
-  # Create a new scratch org using the scratch-def.json locally configured for this project.
-  echoStepMsg "Create a new $ORG_ALIAS_TO_CREATE scratch org"
-  echo "Executing force:org:create -f $SCRATCH_ORG_CONFIG -a $ORG_ALIAS_TO_CREATE -v $DEV_HUB_ALIAS -s -d 29"
-  (cd $PROJECT_ROOT && exec sfdx force:org:create -f $SCRATCH_ORG_CONFIG -a $ORG_ALIAS_TO_CREATE -v $DEV_HUB_ALIAS -s -d 29)
-  if [ $? -ne 0 ]; then
-    echoErrorMsg "Scratch org \"$ORG_ALIAS_TO_CREATE\"could not be created. Aborting Script."
-    exit 1
+  # Create a new scratch org using the specified or default alias and config.
+  echoStepMsg "Create a new scratch org with alias: $ORG_ALIAS_TO_CREATE"
+  command="sf org create scratch --definition-file $SCRATCH_ORG_CONFIG --alias $ORG_ALIAS_TO_CREATE --target-dev-hub $DEV_HUB_ALIAS --set-default --duration-days 29 --wait 30 --json"
+  echo "Executing: $command"
+
+  # Execute the command and capture the JSON output
+  json_output=$(cd $PROJECT_ROOT && eval $command)
+
+  # Check if success is false using jq
+  status=$(echo "$json_output" | jq -r '.status')
+  if [ "$status" != "0" ]; then
+      echoErrorMsg "Error: Scratch org could not be created. Aborting Script"
+      echo "JSON output: $json_output"
+      exit 1
   fi
+  orgId=$(echo "$json_output" | jq -r '.result.orgId')
+  username=$(echo "$json_output" | jq -r '.result.scratchOrgInfo.SignupUsername')
+  loginUrl=$(echo "$json_output" | jq -r '.result.scratchOrgInfo.LoginUrl')
+
+  echoSuccess "Scratch org created. Alias: $ORG_ALIAS_TO_CREATE"
+  echo "OrgId: $orgId"
+  echo "Username: $username"
+  echo "LoginUrl: $loginUrl"
 }
 
 createTestClassList() {
@@ -186,27 +204,23 @@ createTestClassList() {
 
 #REGION D
 deleteScratchOrg () {
-  # Declare a local variable to store the Alias of the org to delete
-  local ORG_ALIAS_TO_DELETE=""
-
-  # Check if a value was passed to this function in Argument 1.
-  # If there was we will make that the org alias to delete.
-  if [ ! -z $1 ]; then
-    ORG_ALIAS_TO_DELETE="$1"
-  elif [ ! -z $TARGET_ORG_ALIAS ]; then
-    ORG_ALIAS_TO_DELETE="$TARGET_ORG_ALIAS"
+  local ORG_ALIAS=$1
+  # Set default org alias
+  if [ -z "$1" ]; then
+    ORG_ALIAS="$SCRATCH_ORG_ALIAS"
   else
-    # Something went wrong. No argument was provided and the TARGET_ORG_ALIAS
-    # has not yet been set or is an empty string.  Raise an error message and
-    # then exit 1 to kill the script.
-    echoErrorMsg "Could not execute deleteScratchOrg(). Unknown target org alias."
-    exit 1
+    ORG_ALIAS="$1"
   fi
-
+  local confirmDelete=false
+  confirmChoice confirmDelete "Do you want to delete your existing scratch org with alias: $ORG_ALIAS?"
+  if [ "$confirmDelete" = false ] ; then
+    return
+  fi
   # Delete the current scratch org.
-  echoStepMsg "Delete the $ORG_ALIAS_TO_DELETE scratch org"
-  echo "Executing force:org:delete -p -u $ORG_ALIAS_TO_DELETE -v $DEV_HUB_ALIAS"
-  (cd $PROJECT_ROOT && exec sfdx force:org:delete -p -u $ORG_ALIAS_TO_DELETE -v $DEV_HUB_ALIAS )
+  echoStepMsg "Delete the $ORG_ALIAS scratch org"
+  command="sf org delete scratch --target-org $orgName --no-prompt --json"
+  echo "Executing: $command"
+  (cd $PROJECT_ROOT && exec $command)
 }
 
 determineTargetOrgAlias () {
