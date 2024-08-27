@@ -508,6 +508,100 @@ installPackage () {
 #END REGION O
 
 #REGION P
+publishCommunity () {
+  # @usage: publishCommunity returnBoolean "Community Name" "target org alias"
+  # if [ "$returnBoolean" = false ] ; then
+  #   # do failure things
+  # else
+  #   # do success things
+  # fi
+
+  if [ -z "$2" ]; then
+    echoErrorMsg "Community Name and Org Alias must be provided in order to publish. Usage: publishCommunity returnVariable \"Community Name\" \"Org Alias\""
+    eval "$1=false"
+    exit 0
+  fi
+
+  if [ -z "$3" ]; then
+    echoErrorMsg "Community Name and Org Alias must be provided in order to publish. Usage: publishCommunity returnVariable  \"Community Name\" \"Org Alias\""
+    eval "$1=false"
+    exit 0
+  fi
+
+  # Clean and assign the name to a local
+  local community_name="$(echo $2 | tr -d '\r')"
+  local org="$3"
+
+  echo "Attempting to publish: $community_name"
+  
+  # We can only publish ACTIVE communities, so we will query not only for the Nme (cannot just used Id, sadly) but also the Status.
+  results=$(sf data query -q "SELECT Id, Name FROM Network WHERE Name='$community_name' AND Status='Live'" --json --target-org $org)
+
+  # Count the records to see if we got anything.
+  record_count=$(echo "$results" | jq '.result.totalSize')
+
+  # Is it null somehow? Shouldn't be but let's check anyway
+  if [ -z "$record_count" ]; then
+    echoErrorMsg "Community: $community_name not found OR not in Active status."
+    eval "$1=false"
+    exit 0
+  fi
+
+  # Is 0? Not found or not active.
+  if [ "$record_count" -eq 0 ]; then
+    echoErrorMsg "Community: $community_name not found OR not in Active status."
+    eval "$1=false"
+    exit 0
+  fi
+
+  echo "Community located, executing async Publish command"
+
+  # OK, we know the name is valid, and the Site has been Activated. Let's publish!
+  publish_result=$(sf community publish --name "$community_name" --json --target-org $org)
+
+  # Get the job id
+  job_id=$(echo "$publish_result" | jq -r '.result.id')
+
+  echo "Job submitted, Id: $job_id"
+
+  # Set up In progress statuses
+  in_progress_statuses=" New Scheduled Waiting Running"
+
+  # Poll for status
+  while :
+  do
+    # Get the job status
+    status_result=$(sf data query --query "SELECT Id, Status, Error FROM BackgroundOperation WHERE Id='$job_id'" --json --target-org $org)
+    status=$(echo "$status_result" | jq -r '.result.records[0].status')
+    is_done=$(echo "$status_result" | jq -r '.result.done')
+
+    echo "Is Job Complete?: $is_done"
+
+    if [ "$is_done" == true ]; then
+      echo "$community_name published successfully."
+      eval "$1=true"
+      break
+    fi
+    if [[ $in_progress_statuses == *" "$status" "* ]]; then
+      echo "Publishing in progress: $status. Waiting five seconds and checking again."
+      sleep 5
+    elif [ "$status" == "Error" ]; then
+      error_message=$(echo "$status_result" | jq -r '.result.records[0].Error')
+      echoErrorMsg "Publish of $community_name failed: $status. Error: $error_message"
+      eval "$1=false"
+      break
+    elif [ "$status" == "Complete" ]; then
+      # Should not get here because we should be caught by the is_done, but just for safety let's check anyway
+      echo "$community_name published successfully."
+      eval "$1=true"
+      break
+    else
+      echoErrorMsg "Publish of community: $community_name: Unknown status: $status. Job Id: $job_id. Will no longer poll for updates."
+      eval "$1=true"
+      break
+    fi
+  done
+}
 
 pushMetadata () {
   local target_org=$1
