@@ -86,13 +86,10 @@ fi
 
 # 3. Convert the SFDX source into MDAPI source.
 echoStepMsg "Converting SFDX source from Package Directory \"$DEFAULT_PACKAGE_DIR_NAME\". Output folder is \"mdapi-source/$DEFAULT_PACKAGE_DIR_NAME\""
-echo \
-"Executing force:source:convert \\
-            --rootdir   ./sfdx-source/$DEFAULT_PACKAGE_DIR_NAME \\
-            --outputdir ./mdapi-source/$DEFAULT_PACKAGE_DIR_NAME\n"
-(cd $PROJECT_ROOT && exec sfdx force:source:convert \
-                                --rootdir   ./sfdx-source/$DEFAULT_PACKAGE_DIR_NAME \
-                                --outputdir ./mdapi-source/$DEFAULT_PACKAGE_DIR_NAME)
+command="sf project convert source --root-dir ./sfdx-source/$DEFAULT_PACKAGE_DIR_NAME --output-dir ./mdapi-source/$DEFAULT_PACKAGE_DIR_NAME"
+echo "Executing: $command"
+(cd $PROJECT_ROOT && exec $command)
+# @TODO: test and harvest json to get proper error messages
 
 
 # TODO: Need to add a check to see if force:source:convert worked.

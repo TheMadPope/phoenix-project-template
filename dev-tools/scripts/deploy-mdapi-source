@@ -88,17 +88,11 @@ fi
 
 # 3. Convert the SFDX source into MDAPI source.
 echoStepMsg "Converting SFDX source from Package Directory \"$DEFAULT_PACKAGE_DIR_NAME\". Output folder is \"mdapi-source/$DEFAULT_PACKAGE_DIR_NAME\""
-echo \
-"Executing force:source:convert \\
-            --rootdir     ./sfdx-source/$DEFAULT_PACKAGE_DIR_NAME \\
-            --outputdir   ./mdapi-source/$DEFAULT_PACKAGE_DIR_NAME \\
-            --packagename \"$PACKAGE_NAME\" \\
-            --loglevel    error\n"
-(cd $PROJECT_ROOT && exec sfdx force:source:convert \
-                                --rootdir     ./sfdx-source/$DEFAULT_PACKAGE_DIR_NAME \
-                                --outputdir   ./mdapi-source/$DEFAULT_PACKAGE_DIR_NAME \
-                                --packagename "$PACKAGE_NAME" \
-                                --loglevel    error)
+command="sf project convert source --root-dir ./sfdx-source/$DEFAULT_PACKAGE_DIR_NAME --output-dir ./mdapi-source/$DEFAULT_PACKAGE_DIR_NAME --package-name \"$PACKAGE_NAME\""
+echo "Executing: $command"
+# @TODO: Test this command, not sure about the quotation mark escaping
+(cd $PROJECT_ROOT && exec $command)
+# @TODO: test and harvest json to get proper error messages
 
 # Check if the previous command executed successfully. If not, abort this script.
 if [ $? -ne 0 ]; then
@@ -109,17 +103,10 @@ fi
 
 # 4. Attempt to deploy the MDAPI source to the packaging org.
 echoStepMsg "Attempt to deploy the MDAPI source to the packaging org"
-echo \
-"Executing force:mdapi:deploy \\
-            --deploydir ./mdapi-source/$DEFAULT_PACKAGE_DIR_NAME \\
-            --testlevel RunLocalTests \\
-            --targetusername $PACKAGING_ORG_ALIAS \\
-            --wait 15\n"
-(cd $PROJECT_ROOT && exec sfdx force:mdapi:deploy \
-                                --deploydir ./mdapi-source/$DEFAULT_PACKAGE_DIR_NAME \
-                                --testlevel RunLocalTests \
-                                --targetusername $PACKAGING_ORG_ALIAS \
-                                --wait 15)
+command="sf project deploy start --metadata-dir ./mdapi-source/$DEFAULT_PACKAGE_DIR_NAME -l RunLocalTests -o $PACKAGING_ORG_ALIAS -w 15"
+echo "Executing: $command"
+
+(cd $PROJECT_ROOT && exec $command)
 
 # Check if the previous command executed successfully. If not, abort this script.
 if [ $? -ne 0 ]; then
