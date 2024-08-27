@@ -103,7 +103,7 @@ fi
 
 # 4. Attempt to deploy the MDAPI source to the packaging org.
 echoStepMsg "Attempt to deploy the MDAPI source to the packaging org"
-command="sf project deploy start --metadata-dir ./mdapi-source/$DEFAULT_PACKAGE_DIR_NAME -l RunLocalTests -o $PACKAGING_ORG_ALIAS -w 15"
+command="sf project deploy start --metadata-dir ./mdapi-source/$DEFAULT_PACKAGE_DIR_NAME --test-level RunLocalTests --target-org $PACKAGING_ORG_ALIAS --wait 15"
 echo "Executing: $command"
 
 (cd $PROJECT_ROOT && exec $command)
