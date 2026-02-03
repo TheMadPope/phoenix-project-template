@@ -69,12 +69,12 @@ SUBSCRIBER_ORG_ALIAS=""
 # Set to empty string ("") if this project is not being tracked in a remote repository.
 GIT_REMOTE_URI="https://github.com/TheMadPope/phoenix-project-template.git"
 
-# Location of the primary scratch-def.json file that should be used by SFDX-Falcon scripts that
+# Location of the primary scratch-def.json file that should be used by Sscripts that
 # create scratch orgs (eg. rebuild-scratch-org).
 SCRATCH_ORG_CONFIG="$PROJECT_ROOT/dev-tools/lib/config/project-scratch-def.json"
 
 # Echo the variables set by this script prior to exiting.  Specify "false" to suppress the
-# display of local config that normally occurs when executing SFDX-Falcon based scripts.
+# display of local config that normally occurs when executing based scripts.
 ECHO_LOCAL_CONFIG_VARS="true"
 #
 ##
