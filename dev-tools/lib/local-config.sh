@@ -71,7 +71,7 @@ GIT_REMOTE_URI="https://github.com/TheMadPope/phoenix-project-template.git"
 
 # Location of the primary scratch-def.json file that should be used by SFDX-Falcon scripts that
 # create scratch orgs (eg. rebuild-scratch-org).
-SCRATCH_ORG_CONFIG="$PROJECT_ROOT/config/project-scratch-def.json"
+SCRATCH_ORG_CONFIG="$PROJECT_ROOT/dev-tools/lib/config/project-scratch-def.json"
 
 # Echo the variables set by this script prior to exiting.  Specify "false" to suppress the
 # display of local config that normally occurs when executing SFDX-Falcon based scripts.
