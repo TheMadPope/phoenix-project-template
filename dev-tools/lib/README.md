@@ -2,10 +2,10 @@
 
 ### What type of files should be kept in this directory?
 
-This directory should contain only this readme, and shared-functions.sh.
+This directory should contain only this readme, shared-functions.sh, and local-config.sh
 It's entirely possible that, in the future, you might want to put another shared library file here, but most likely you should put your shared functions in... the shared-functions library.
 
-### How do I invoke / load / source the shared-functions library? Like so:
+### How do I invoke / load / source the shared-functions library? Like so (example implementation is in the ./dev-tools/scripts/rebuild-scratch-org script):
 ```
 #### LOAD SHARED FUNCTIONS LIBRARY #################################################################
 # Make sure that the shared-functions.sh script exists.
