@@ -59,7 +59,7 @@ confirmWithAbort "Do you want to rebuild your scratch org?"
 #### SCRATCH ORG SETUP (DELETE/CREATE/PUSH) ########################################################
 # STEP 0
 # Reset the Step Message counter to reflect the number of TOTAL STEPS
-# in your rebuild process. For the baseline SFDX-Falcon template it's 4.
+# in your rebuild process. For the baseline template it's 4.
 resetStepMsgCounter 7
 
 # Delete the current scratch org.
