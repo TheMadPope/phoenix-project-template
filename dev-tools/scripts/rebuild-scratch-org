@@ -63,7 +63,7 @@ confirmWithAbort "Do you want to rebuild your scratch org?"
 resetStepMsgCounter 7
 
 # Delete the current scratch org.
-deleteScratchOrg
+deleteScratchOrgWithConfirmation
 
 # Create a new scratch org using the scratch-def.json locally configured for this project.
 createScratchOrg

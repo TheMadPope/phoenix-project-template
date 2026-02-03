@@ -203,24 +203,66 @@ createTestClassList() {
 #END REGION C
 
 #REGION D
-deleteScratchOrg () {
-  local ORG_ALIAS=$1
-  # Set default org alias
-  if [ -z "$1" ]; then
-    ORG_ALIAS="$SCRATCH_ORG_ALIAS"
-  else
-    ORG_ALIAS="$1"
-  fi
-  local confirmDelete=false
-  confirmChoice confirmDelete "Do you want to delete your existing scratch org with alias: $ORG_ALIAS?"
-  if [ "$confirmDelete" = false ] ; then
-    return
-  fi
-  # Delete the current scratch org.
-  echoStepMsg "Delete the $ORG_ALIAS scratch org"
-  command="sf org delete scratch --target-org $orgName --no-prompt --json"
-  echo "Executing: $command"
-  (cd $PROJECT_ROOT && exec $command)
+
+deleteScratchOrgWithConfirmation () {
+  local existingOrgList=()
+  # add the names to the existing org list
+  touch $SCRATCH_ORG_LIST
+  local input=$SCRATCH_ORG_LIST
+  while IFS= read -r line
+  do
+    existingOrgList+=("${line//[$'\t\r\n ']}")
+  done < "$input"
+
+  local orgNames=()
+  local confirmation=false
+  for orgName in "${existingOrgList[@]}"
+  do
+    confirmChoice confirmation "KEEP Scratch Org with alias: $orgName? (or it will be deleted)?"
+    if [ "$confirmation" = false ] ; then
+      # User did not choose to keep org, so delete them
+      command="sf org delete scratch --target-org $orgName --no-prompt --json"
+      echo "Executing: $command"
+      # Execute the command and capture the JSON output
+      json_output=$(cd $PROJECT_ROOT && eval $command)
+
+      # Check if success is false using jq
+      status=$(echo "$json_output" | jq -r '.status')
+
+      if [ "$status" != "0" ]; then
+          echoErrorMsg "Error: Org '$orgName' could not be deleted"
+          echo "JSON output: $json_output"
+      fi
+    else
+      echo "Keeping org $orgName."
+      echo ""
+      # Not deleted, so keep the name around
+      orgNames+=("$orgName")
+    fi
+  done
+
+  echo "Determining new scratch name..."
+  # While orgNames contains the SCRATCH_ORG_ALIAS
+  while [[ " ${orgNames[@]} " =~ " ${SCRATCH_ORG_ALIAS} " ]]
+  do
+    local LAST_CHAR="${SCRATCH_ORG_ALIAS: -1}"
+    local REGEX_PATTERN='^[0-9]+$'
+    if ! [[ $LAST_CHAR =~ $REGEX_PATTERN ]] ; then
+      # Last character is NOT a number, add a v1 to it
+      SCRATCH_ORG_ALIAS+="v1"
+    else
+      # Last character IS a number, increment that number - v1 becomes v2.
+      LAST_CHAR=$((LAST_CHAR+1))
+      local newAlias=${SCRATCH_ORG_ALIAS%?}
+      newAlias+="$LAST_CHAR"
+      SCRATCH_ORG_ALIAS="$newAlias"
+    fi
+  done
+  # Add the new name to the list
+  orgNames+=("$SCRATCH_ORG_ALIAS")
+  # Update the file with the names
+  printf "%s\n" "${orgNames[@]}" > $SCRATCH_ORG_LIST
+  echo "New SCRATCH_ORG_ALIAS: $SCRATCH_ORG_ALIAS"
 }
 
 determineTargetOrgAlias () {
