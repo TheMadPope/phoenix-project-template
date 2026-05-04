@@ -378,6 +378,12 @@ echoQuestion () {
   let CURRENT_QUESTION++
 }
 
+echoSuccess () {
+  tput sgr 0; tput setaf 7; tput bold;
+  printf "\n\n$1\n\n"
+  tput sgr 0;
+}
+
 echoScriptCompleteMsg () {
   tput sgr 0; tput setaf 7; tput bold;
   printf "\n\nScript Complete: "
