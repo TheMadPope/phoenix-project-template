@@ -41,6 +41,9 @@ NAMESPACE_PREFIX=""
 # Set to empty string ("") if this project is not building a managed package.
 PACKAGE_NAME=""
 
+# Scratch Org names file. Allows retention of >1 scratch org
+SCRATCH_ORG_LIST="$PROJECT_ROOT/dev-tools/lib/config/scratch-alias.txt"
+
 # Metadata Package ID.  Refers to the metadata package as a whole.  Must begin with "033".
 # Set to empty string ("") if this project is not building a managed package.
 METADATA_PACKAGE_ID=""

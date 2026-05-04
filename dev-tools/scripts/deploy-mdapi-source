@@ -1,14 +1,14 @@
 #!/bin/bash
 ####################################################################################################
 #
-# FILENAME:     deploy-mdapi-source.sh
+# FILENAME:     deploy-mdapi-source
 #
 # PURPOSE:      Convert SFDX source to MDAPI format and DEPLOY to the packaging org.
 #
 # DESCRIPTION:  TODO: Write desription
 #
-# INSTRUCTIONS: Execute the following command relative to your project's root directory:  
-#               . ./dev-tools/deploy-mdapi-source.sh
+# INSTRUCTIONS: Execute the following command relative to your project's root directory:
+#               . ./dev-tools/scripts/deploy-mdapi-source
 #
 # RELATED DOCS: TODO: ?????
 #               └─ https://???.???.com

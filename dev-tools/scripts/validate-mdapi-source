@@ -1,21 +1,14 @@
 #!/bin/bash
 ####################################################################################################
 #
-# FILENAME:     validate-mdapi-source.sh
+# FILENAME:     validate-mdapi-source
 #
 # PURPOSE:      Convert SFDX source to MDAPI format and validate against the packaging org.
 #
 # DESCRIPTION:  TODO: Write desription
 #
-# INSTRUCTIONS: Execute the following command relative to your project's root directory:  
-#               . ./dev-tools/validate-mdapi-source.sh
-#
-# RELATED DOCS: TODO: ?????
-#               └─ https://???.???.com
-#
-#               TODO: ?????
-#               ├─ https://www.????.com
-#               └─ https://www.????.com
+# INSTRUCTIONS: Execute the following command relative to your project's root directory:
+#               . ./dev-tools/scripts/validate-mdapi-source
 #
 #### LOAD SHARED FUNCTIONS LIBRARY #################################################################
 #
@@ -93,7 +86,7 @@ echo "Executing: $command"
 
 
 # TODO: Need to add a check to see if force:source:convert worked.
-#       If it didn't, then we need to exit this script now without doing the 
+#       If it didn't, then we need to exit this script now without doing the
 #       check-only deploy to the packaging org.
 
 

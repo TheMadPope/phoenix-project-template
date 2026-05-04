@@ -1,21 +1,14 @@
 #!/bin/bash
 ####################################################################################################
 #
-# FILENAME:     validate-org-connections.sh
+# FILENAME:     validate-org-connections
 #
 # PURPOSE:      ##ADD_PURPOSE_HERE##
 #
 # DESCRIPTION:  ##ADD_DESCRIPTIION_HERE##
 #
-# INSTRUCTIONS: Execute the following command relative to your project's root directory:  
-#               . ./dev-tools/validate-org-connections.sh
-#
-# RELATED DOCS: TODO: ?????
-#               └─ https://???.???.com
-#
-#               TODO: ?????
-#               ├─ https://www.????.com
-#               └─ https://www.????.com
+# INSTRUCTIONS: Execute the following command relative to your project's root directory:
+#               . ./dev-tools/scripts/validate-org-connections
 #
 #### LOAD SHARED FUNCTIONS LIBRARY #################################################################
 #
@@ -78,7 +71,7 @@ if [ $? -eq 0 ]; then
   echo "\n=== Org Limits\n"
   (cd $PROJECT_ROOT && exec sfdx force:limits:api:display \
                                   --targetusername $DEV_HUB_ALIAS \
-                                  --loglevel error)  
+                                  --loglevel error)
 fi
 
 
@@ -94,7 +87,7 @@ if [ $? -eq 0 ]; then
   echo "\n=== Org Limits\n"
   (cd $PROJECT_ROOT && exec sfdx force:limits:api:display \
                                   --targetusername $PACKAGING_ORG_ALIAS \
-                                  --loglevel error)  
+                                  --loglevel error)
 fi
 
 
@@ -110,14 +103,14 @@ if [ $? -eq 0 ]; then
   echo "\n=== Org Limits\n"
   (cd $PROJECT_ROOT && exec sfdx force:limits:api:display \
                                   --targetusername $SUBSCRIBER_SANDBOX_ALIAS \
-                                  --loglevel error)  
+                                  --loglevel error)
 fi
 #
 #
 #### ECHO CLOSING MESSAGE ##########################################################################
 #
 echoScriptCompleteMsg \
-"Validation of org connections complete. If your are missing 
+"Validation of org connections complete. If your are missing
 any aliases you can run setup-project-org-auth to re-authenticate."
 
 ##END##

@@ -5,8 +5,8 @@
 #
 # PURPOSE:      Uninstalls a 04t package from an org
 #
-# INSTRUCTIONS: Execute the following command relative to your project's root directory:  
-#               ./dev-tools/uninstall-pkg-from-sandbox [package id] [org alias]
+# INSTRUCTIONS: Execute the following command relative to your project's root directory:
+#               ./dev-tools/scripts/uninstall-pkg-from-sandbox [package id] [org alias]
 #
 #### LOAD SHARED FUNCTIONS LIBRARY #################################################################
 # Make sure that the shared-functions.sh script exists.

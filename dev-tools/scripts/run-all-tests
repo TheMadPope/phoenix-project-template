@@ -5,8 +5,8 @@
 #
 # PURPOSE:      Runs local tests (not tests from managed packages)
 #
-# INSTRUCTIONS: Execute the following command relative to your project's root directory:  
-#               ./dev-tools/run_all_tests
+# INSTRUCTIONS: Execute the following command relative to your project's root directory:
+#               ./dev-tools/scripts/run_all_tests
 #
 #### LOAD SHARED FUNCTIONS LIBRARY #################################################################
 # Make sure that the shared-functions.sh script exists.

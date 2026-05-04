@@ -10,7 +10,7 @@
 #               information defined in your dev-tools/lib/local-config.sh file.
 #
 # INSTRUCTIONS: Execute the following command from the root of your SFDX project directory.
-#               ./dev-tools/rebuild-scratch-org
+#               ./dev-tools/scripts/rebuild-scratch-org
 #
 ####################################################################################################
 

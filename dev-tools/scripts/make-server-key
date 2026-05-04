@@ -7,8 +7,8 @@
 #
 # DESCRIPTION:  Self-signed SSL certificates (AKA "Server keys") are needed for JWT auth stuff.
 #
-# INSTRUCTIONS: Execute the following command relative to your project's root directory:  
-#               ./dev-tools/make-server-key
+# INSTRUCTIONS: Execute the following command relative to your project's root directory:
+#               ./dev-tools/scripts/make-server-key
 #
 # RELATED DOCS: Create Your Connected App (Trailhead Module)
 #               └─ https://trailhead.salesforce.com/trails/sfdx_get_started/modules/sfdx_travis_ci/units/sfdx_travis_ci_connected_app
@@ -17,7 +17,7 @@
 #               ├─ https://www.openssl.org/docs/manmaster/man1/openssl-req.html
 #               └─ https://www.openssl.org/docs/manmaster/man1/x509.html
 #
-#               xxd manpages 
+#               xxd manpages
 #               └─ https://www.systutorials.com/docs/linux/man/1-xxd/
 #
 #               CircleCI Contexts and Environment Variables
@@ -86,20 +86,20 @@ CERTIFICATE_EXPIRE_DAYS=365         # The number of days the self-signed certifi
 # 0. Reset the Step Message counter and set the TOTAL STEPS to 5.
 resetStepMsgCounter 3
 
-# 1. Create a Certificate Signing Request (CSR), making sure to export of copy of the 
-#    RSA Private Key at the same time.  Note that the value for the Certificate's subject 
+# 1. Create a Certificate Signing Request (CSR), making sure to export of copy of the
+#    RSA Private Key at the same time.  Note that the value for the Certificate's subject
 #    are all defined as variables, above.
 echoStepMsg "Create a Certificate Signing Request and show the Private Key as a one-line hexdump"
 openssl req -nodes \
             -newkey rsa:2048 \
             -keyout $UNENCRYPTED_PRIVATE_KEY_FILE \
             -out    $CSR_FILE \
-            -subj "/C=$COUNTRY_NAME/ST=$STATE/L=$LOCALITY/O=$ORGANIZATION_NAME/OU=$ORGANIZATIONAL_UNIT/CN=$COMMON_NAME/emailAddress=$EMAIL" 
+            -subj "/C=$COUNTRY_NAME/ST=$STATE/L=$LOCALITY/O=$ORGANIZATION_NAME/OU=$ORGANIZATIONAL_UNIT/CN=$COMMON_NAME/emailAddress=$EMAIL"
 
 echo "\nPrivate Key saved to $UNENCRYPTED_PRIVATE_KEY_FILE"
 
 # 2. Create a single-line hexdump of the private key and save to file.  This hexdump
-#    will be used to store the value of the private key as an Environment Variable in 
+#    will be used to store the value of the private key as an Environment Variable in
 #    your CircleCI project's org-global context.  https://circleci.com/docs/2.0/contexts/
 echoStepMsg "Create a single-line hexdump of the private key and save to a file"
 xxd -u -p -c 10000 \
@@ -120,7 +120,7 @@ openssl x509  -req \
               -days $CERTIFICATE_EXPIRE_DAYS \
               -in $CSR_FILE \
               -signkey $UNENCRYPTED_PRIVATE_KEY_FILE \
-              -out $SIGNED_SERVER_CERT_FILE 
+              -out $SIGNED_SERVER_CERT_FILE
 
 echo "\n\n-----BEGIN CERTIFICATE DETAILS-----"
 openssl x509  -in $SIGNED_SERVER_CERT_FILE \

@@ -7,8 +7,8 @@
 #
 # DESCRIPTION:  TODO: Write descritption
 #
-# INSTRUCTIONS: Execute the following command relative to your project's root directory:  
-#               ./dev-tools/install-pkg-in-sandbox
+# INSTRUCTIONS: Execute the following command relative to your project's root directory:
+#               ./dev-tools/scripts/install-pkg-in-sandbox
 #
 # RELATED DOCS: TODO: ?????
 #               └─ https://???.???.com
