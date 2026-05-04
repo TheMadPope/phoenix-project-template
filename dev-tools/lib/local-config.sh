@@ -58,9 +58,6 @@ DEFAULT_PACKAGE_DIR_NAME="force-app"
 # Alias for the primary Scratch Org used by this project.
 SCRATCH_ORG_ALIAS="scratch"
 
-# Alias for the SANDBOX used by this developer.
-SCRATCH_ORG_ALIAS="scratch"
-
 # Alias for the packaging org for this project.
 PACKAGING_ORG_ALIAS=""
 

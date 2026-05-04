@@ -124,21 +124,20 @@ confirmWithAbort () {
 }
 
 createScratchOrg() {
-  # Declare a local variable to store the Alias of the org to CREATE
-  local ORG_ALIAS_TO_CREATE=""
-
-  # Check if a value was passed to this function in Argument 1.
-  # If there was we will make that the org alias to CREATE.
-  if [ ! -z $1 ]; then
-    ORG_ALIAS_TO_CREATE="$1"
-  elif [ ! -z $TARGET_ORG_ALIAS ]; then
-    ORG_ALIAS_TO_CREATE="$TARGET_ORG_ALIAS"
+  # Set default scratch config or use the one passed in
+  local SCRATCH_CONFIG=$1
+  # Set default scratch config
+  if [ -z "$1" ]; then
+    SCRATCH_CONFIG="$SCRATCH_ORG_CONFIG"
   else
-    # Something went wrong. No argument was provided and the TARGET_ORG_ALIAS
-    # has not yet been set or is an empty string.  Raise an error message and
-    # then exit 1 to kill the script.
-    echoErrorMsg "Could not execute createScratchOrg(). Unknown target org alias."
-    exit 1
+    SCRATCH_CONFIG="$1"
+  fi
+  local ORG_ALIAS_TO_CREATE=$2
+  # Set default org alias
+  if [ -z "$2" ]; then
+    ORG_ALIAS_TO_CREATE="$SCRATCH_ORG_ALIAS"
+  else
+    ORG_ALIAS_TO_CREATE="$2"
   fi
 
   # Create a new scratch org using the specified or default alias and config.
@@ -466,7 +465,7 @@ findProjectRoot () {
     echo "FATAL ERROR: `tput sgr0``tput setaf 1`PLEASE NOTE: Scripts must be run from any folder below the dev-tools folder."
     exit 1
   fi
-  
+
   # Pass the value of the "detected path" back out to the caller by setting the
   # value of the first argument provided when the function was called.
   eval "$1=\"$root_dir\""
@@ -527,7 +526,7 @@ installPackage () {
 
   command="sf package install --package $1 --publish-wait 5 --wait 10 --target_org $TARGET_ORG"
   echo "Executing: $command"
-  
+
   # Print the time (HH:MM:SS) when the installation started.
   echo "\n`tput bold`Package installation started at `date +%T``tput sgr0`\n"
   local startTime=`date +%s`
@@ -589,7 +588,7 @@ publishCommunity () {
   local org="$3"
 
   echo "Attempting to publish: $community_name"
-  
+
   # We can only publish ACTIVE communities, so we will query not only for the Nme (cannot just used Id, sadly) but also the Status.
   results=$(sf data query -q "SELECT Id, Name FROM Network WHERE Name='$community_name' AND Status='Live'" --json --target-org $org)
 
